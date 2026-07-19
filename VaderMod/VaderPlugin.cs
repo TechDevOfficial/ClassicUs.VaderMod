@@ -18,7 +18,7 @@ namespace ClassicUs.VaderMod
     public class VaderPlugin : BasePlugin
     {
         public const string Guid = "classicus.vadermod";
-        public const string Version = "1.0.1";
+        public const string Version = "1.1.0";
         public const string ModName = "ClassicUsVaderMod";
 
         public const string RpcSyncSettingsKey = "classicus.vadermod.SyncSettings";
@@ -75,8 +75,7 @@ namespace ClassicUs.VaderMod
             ManactorAPI.RegisterRpcMethods(typeof(VaderSaberSystem));
             ManactorAPI.RegisterRpcMethods(typeof(VaderForceSystem));
 
-            RoleRegistry.Register(new VaderRoleDescriptor(), () => IsTypeReady, EnsureIl2CppTypeRegistered,
-                () => Il2CppType.Of<DarthVaderRole>());
+            RoleRegistry.RegisterVirtual(new VaderRoleDescriptor());
 
             SettingsMenuAPI.Register(7, builder =>
             {
@@ -113,7 +112,16 @@ namespace ClassicUs.VaderMod
             ModBadgeAPI.RegisterLoadedModBadge("VaderMod", Version, new Color(0.9f, 0.05f, 0.05f, 1f));
             ModBadgeAPI.RegisterPrelobbyTag("Vader Mod", "#E60D0D");
 
-            new Harmony(Guid).PatchAll();
+            var harmony = new Harmony(Guid);
+            harmony.CreateClassProcessor(typeof(HudManager_FixedUpdate_Patch)).Patch();
+            harmony.CreateClassProcessor(typeof(HudManager_Start_Patch)).Patch();
+            harmony.CreateClassProcessor(typeof(AmongUsClient_OnGameEnd_Patch)).Patch();
+            harmony.CreateClassProcessor(typeof(EndGameManager_NextGame_Patch)).Patch();
+            harmony.CreateClassProcessor(typeof(EndGameManager_Exit_Patch)).Patch();
+            harmony.CreateClassProcessor(typeof(AmongUsClient_ExitGame_Patch)).Patch();
+            harmony.CreateClassProcessor(typeof(RoleManager_AssignRolesForTeam_Patch)).Patch();
+            harmony.CreateClassProcessor(typeof(AmongUsClient_OnPlayerJoined_Patch)).Patch();
+            harmony.CreateClassProcessor(typeof(PingTracker_Update_Patch)).Patch();
             Log.LogInfo("Classic Us Vader Mod loaded.");
         }
 
@@ -129,19 +137,21 @@ namespace ClassicUs.VaderMod
             if (_classInjectorAttempted) return;
             _classInjectorAttempted = true;
 
-            ManactorAPI.RegisterIl2CppType(() =>
+            RegisterTypeNow();
+        }
+
+        private static void RegisterTypeNow()
+        {
+            try
             {
-                try
-                {
-                    ClassInjector.RegisterTypeInIl2Cpp<DarthVaderRole>();
-                    IsTypeReady = true;
-                    Log.LogInfo("DarthVaderRole type registered in IL2CPP.");
-                }
-                catch (Exception e)
-                {
-                    Log.LogError("DarthVaderRole registration failed: " + e);
-                }
-            });
+                ClassInjector.RegisterTypeInIl2Cpp<DarthVaderRole>();
+                IsTypeReady = true;
+                Log.LogInfo("DarthVaderRole type registered in IL2CPP.");
+            }
+            catch (Exception e)
+            {
+                Log.LogError("DarthVaderRole registration failed: " + e);
+            }
         }
 
         public static void HostBroadcastSettings()
@@ -178,8 +188,8 @@ namespace ClassicUs.VaderMod
 
         public static bool IsVader(PlayerControl p)
         {
-            if (p == null || p.Data == null || p.Data.myRole == null) return false;
-            try { return p.Data.myRole.GetIl2CppType().Name == "DarthVaderRole"; }
+            if (p == null || p.Data == null) return false;
+            try { return RoleRegistry.IsAssigned(p, "DarthVaderRole"); }
             catch { return false; }
         }
     }
