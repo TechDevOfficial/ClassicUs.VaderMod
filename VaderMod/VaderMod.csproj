@@ -9,15 +9,12 @@
     <Nullable>disable</Nullable>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <NoWarn>CS0626;CS0649;CS8632;CS0108</NoWarn>
-
-    <GameDir>C:\Users\afino\Downloads\Classic.Us.2026.7.4.Windows\Classic Us 2026.7.11 Windows</GameDir>
-    <PluginsDir>$(GameDir)\BepInEx\plugins</PluginsDir>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="ClassicUs.GameLibs" Version="2026.7.11.1" PrivateAssets="all" />
-    <PackageReference Include="ClassicUs.Manactor" Version="1.0.26" PrivateAssets="all" ExcludeAssets="runtime" />
-    <ProjectReference Include="..\..\ManuAPI\ManuAPI\ManuAPI.csproj" PrivateAssets="all" />
+    <PackageReference Include="ClassicUs.Manactor" Version="1.1.0" PrivateAssets="all" ExcludeAssets="runtime" />
+    <PackageReference Include="ClassicUs.ManuAPI" Version="1.5.1" PrivateAssets="all" ExcludeAssets="runtime" />
   </ItemGroup>
 
   <ItemGroup>
@@ -32,10 +29,10 @@
     </EmbeddedResource>
   </ItemGroup>
 
-  <Target Name="CopyToPlugins" AfterTargets="Build">
-    <MakeDir Directories="$(PluginsDir)" />
-    <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(PluginsDir)" />
-    <Message Importance="high" Text="Copiato $(AssemblyName).dll -> $(PluginsDir)" />
+  <Target Name="CopyToPlugins" AfterTargets="Build" Condition="'$(ClassicUsGameDir)' != ''">
+    <MakeDir Directories="$(ClassicUsGameDir)\BepInEx\plugins" />
+    <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(ClassicUsGameDir)\BepInEx\plugins" />
+    <Message Importance="high" Text="Copiato $(AssemblyName).dll -> $(ClassicUsGameDir)\BepInEx\plugins" />
   </Target>
 
 </Project>
